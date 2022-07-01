@@ -15,7 +15,7 @@ from selenium.webdriver.chrome.options import Options
 import time
 import re
 
-# Webden çektiğimiz sonuçları yazdırmak için kullanılan fonksiyon
+# Printing our results
 def print_results(result,tournament_count,match_count,opponents_dictionary,name,surname,galibiyet,maglubiyet,beraberlik):
     print(name.upper()+" "+surname.upper())
     print("*"*50)
