@@ -12,12 +12,11 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
-import time
 import re
 
 # Printing our results
-def print_results(result,tournament_count,match_count,opponents_dictionary,name,surname,galibiyet,maglubiyet,beraberlik):
-    print(name.upper()+" "+surname.upper())
+def print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,galibiyet,maglubiyet,beraberlik,ukd,cities_dict,result_cities):
+    print((name.upper()+" "+surname.upper()+ "\nUKD: {}".format(ukd)))
     print("*"*50)
     print("Oynanan turnuva sayısı: {}".format(tournament_count))
     print("Oynanan mac sayısı: {}".format(match_count))
@@ -28,10 +27,15 @@ def print_results(result,tournament_count,match_count,opponents_dictionary,name,
     kazanma_orani = puan/match_count*100
     print("Kazanma Yüzdesi: %{:.2f}".format(kazanma_orani))
     print("-"*50)
-    print("En çok oynanan opponents:\n ")
-    for i in range(len(result)):
-        print(result[i][0]," Maç sayısı: ",result[i][1]," Skor: ",opponents_dictionary[result[i][0]],"-",result[i][1]-opponents_dictionary[result[i][0]])
-
+    print("En çok oynanan rakipler:\n ")
+    for i in range(len(result_opponents)):
+        print(result_opponents[i][0]," Maç sayısı: ",result_opponents[i][1]," Skor: ",opponents_dictionary[result_opponents[i][0]],"-",result_opponents[i][1]-opponents_dictionary[result_opponents[i][0]])
+    print("-"*50)
+    print("En çok oynanan şehirler:\n ")
+    for i in range(len(result_cities)):
+        degisim = cities_dict[result_cities[i][0]]
+        print(result_cities[i][0]," Turnuva Sayısı: ",result_cities[i][1]," UKD Değişimi: ","{:.2f}".format(degisim))
+    
 #FIXED BUG: There is upper "i" as "İ" in Turkish therefore we need to make some adjustments
 def upper_i(name):
     if "i" in name:
@@ -98,14 +102,31 @@ tum_turnuva_button.click()
 turnuvalar_table = driver.find_elements(By.XPATH, "//tr/td/table")
 tournament_count = (len(turnuvalar_table)/2)-4
 tournament_count = int(tournament_count)
-
+tournament_traits = []
 #There is table inside of the table and we only want the insider table
 for i in range(8,len(turnuvalar_table)):
     if i % 2 == 1:
         turnuvalar.append(turnuvalar_table[i].text)
-       
+    if i % 2 == 0:
+        tournament_traits.append(turnuvalar_table[i].text.split("\n"))
+cities = []
 
-
+cities_dict = {}
+tour_name_city = []
+rating_change = []
+for i in range(len(tournament_traits)):
+    tournament_traits[i][0] = tournament_traits[i][0].replace(" ", "")
+    tournament_traits[i][1] = tournament_traits[i][1].replace("Toplam UKD Değişimi ", "")
+    tour_name_city.append( tournament_traits[i][0].split("/"))
+    cities.append(tour_name_city[i][2])
+    rating_change.append(float(tournament_traits[i][1]))
+unique_cities = set(cities)
+cities_dict = dict.fromkeys(unique_cities,0)
+for i in range(len(cities)):
+    if cities[i] in unique_cities:
+        cities_dict[cities[i]] += rating_change[i]
+    
+    
 
 #Formatting to get surname and name from the initial table adding the results of the match with the opponent as strings
 for j in range(len(turnuvalar)):
@@ -150,10 +171,13 @@ for i in range(len(opponents_scores)):
 
 
 match_count = len(opponents)
-counts = Counter(opponents)
-result = counts.most_common(20)
+counts_opponents = Counter(opponents)
+result_opponents = counts_opponents.most_common(20)
 
-print_results(result,tournament_count,match_count,opponents_dictionary,name,surname,total_win,total_loss,total_draw)
+counts_cities = Counter(cities)
+result_cities = counts_cities.most_common(10)
+
+print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,total_win,total_loss,total_draw,ukd,cities_dict,result_cities)
 driver.close()
 
 
