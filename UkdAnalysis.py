@@ -15,7 +15,7 @@ from selenium.webdriver.chrome.options import Options
 import re
 
 # Printing our results
-def print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,galibiyet,maglubiyet,beraberlik,ukd,cities_dict,result_cities):
+def print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,galibiyet,maglubiyet,beraberlik,ukd,cities_dict,result_cities,total_rating):
     print((name.upper()+" "+surname.upper()+ "\nUKD: {}".format(ukd)))
     print("*"*50)
     print("Oynanan turnuva sayısı: {}".format(tournament_count))
@@ -23,6 +23,8 @@ def print_results(result_opponents,tournament_count,match_count,opponents_dictio
     print("Toplam galibiyet sayısı: {}".format(galibiyet))
     print("Toplam maglubiyet sayısı: {}".format(maglubiyet))
     print("Toplam beraberlik sayısı: {}".format(beraberlik))
+    opp_avg = total_rating/match_count
+    print("Ortalama rakip UKD'si {:.2f}".format(opp_avg))
     puan = galibiyet*1 + beraberlik*0.5 
     kazanma_orani = puan/match_count*100
     print("Kazanma Yüzdesi: %{:.2f}".format(kazanma_orani))
@@ -114,12 +116,20 @@ cities = []
 cities_dict = {}
 tour_name_city = []
 rating_change = []
+rating_list = []
 for i in range(len(tournament_traits)):
     tournament_traits[i][0] = tournament_traits[i][0].replace(" ", "")
     tournament_traits[i][1] = tournament_traits[i][1].replace("Toplam UKD Değişimi ", "")
     tour_name_city.append( tournament_traits[i][0].split("/"))
     cities.append(tour_name_city[i][2])
     rating_change.append(float(tournament_traits[i][1]))
+    for j in range(3,len(tournament_traits[i])):
+        
+        tournament_traits[i][j] = tournament_traits[i][j].split("...")
+        try:
+            rating_list.append(int(tournament_traits[i][j][1][1:5]))
+        except:
+            rating_list.append(1000)
 unique_cities = set(cities)
 cities_dict = dict.fromkeys(unique_cities,0)
 for i in range(len(cities)):
@@ -135,6 +145,9 @@ for j in range(len(turnuvalar)):
     turnuvalar[j] = turnuva
     opponents_before_formatting.append(turnuva.split("\n"))
     for k in range(len(opponents_before_formatting[j])):
+        if("İ" in opponents_before_formatting[j][k] or "i" in opponents_before_formatting[j][k]):
+            opponents_before_formatting[j][k] = opponents_before_formatting[j][k].replace("İ","I")
+            opponents_before_formatting[j][k] = opponents_before_formatting[j][k].replace("i","I")
         if("1.0" in opponents_before_formatting[j][k]):
             total_win += 1
             opponents_before_formatting[j][k] = (re.sub('[0-9.-]',"" , opponents_before_formatting[j][k]))
@@ -173,11 +186,11 @@ for i in range(len(opponents_scores)):
 match_count = len(opponents)
 counts_opponents = Counter(opponents)
 result_opponents = counts_opponents.most_common(20)
-
+max_rating = max(rating_list)
 counts_cities = Counter(cities)
-result_cities = counts_cities.most_common(10)
-
-print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,total_win,total_loss,total_draw,ukd,cities_dict,result_cities)
+result_cities = counts_cities.most_common(5)
+total_rating = sum(rating_list)
+print_results(result_opponents,tournament_count,match_count,opponents_dictionary,name,surname,total_win,total_loss,total_draw,ukd,cities_dict,result_cities,total_rating)
 driver.close()
 
 
